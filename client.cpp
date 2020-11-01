@@ -30,6 +30,13 @@ void checkErr(int testVal, char* message)
   }
 }
 
+void checkedWrite(int sockfd, char *buffer, int size)
+{
+	int cWrite;
+	cWrite = write(sockfd, buffer, size);
+	if(cWrite<0)
+    	printExit(strerror(errno), "Failed to write");
+}
 
 int main(int argc, char* argv[]) 
 {
@@ -53,10 +60,11 @@ int main(int argc, char* argv[])
 	int connectTest = connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)); 
 	checkErr(connectTest, "Failed to connect socket");
 //
-	//char buffer[1024];
+	char buffer[4] = "test";
 	//ifstream myFile("filename");
 
 
+	checkedWrite(sockfd, &buffer,4)
 
 
 
@@ -67,3 +75,6 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+
+
+
