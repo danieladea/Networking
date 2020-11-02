@@ -56,7 +56,7 @@ void checkedWrite(int sockfd, char *buffer, int size)
 int main(int argc, char* argv[]) 
 {
 
-int result;
+	int result;
     int socketFd;               /* TCP/IP socket descriptor */
 
     /* structures for use with getaddrinfo() */
@@ -65,12 +65,16 @@ int result;
     struct addrinfo *p;         /* pointer for iterating list in servInfo */
 
     /* argv[1] is host name, argv[2] is port number, make sure we have them */
-    if (argc != 3)
+    if (argc != 4)
     {
-        fprintf(stderr,
-            "Usage:  %s <server hostname or address> <port number>\n",
-            argv[0]);
+        fprintf(stderr, "please include hostname, port number, and a filename as arguments");
         exit(1);
+    }
+    /*0-1023 are reserved*/
+    if(argc[2]<1024)
+    {
+    	fprintf(stderr, "Please use a port not within 0-1023" );
+    	exit(1)
     }
 
     memset(&hints, 0, sizeof(hints));
@@ -82,9 +86,11 @@ int result;
     hints.ai_flags = AI_CANONNAME;      /* include canonical name */
 
     /* get a linked list of likely servers pointed to by servInfo */
-    result = getaddrinfo(argv[1], argv[2], &hints, &servInfo);
+    result = getaddrinfo(hostname, portval, &hints, &servInfo);
 
-
+	string hostname = argv[1]; 
+	int portVal = atoi(argv[2]);
+	string filename = argv[3];
 
     p=servInfo;
 
@@ -95,18 +101,12 @@ int result;
 
         if (socketFd >= 0)
         {
-            /***************************************************************
- *             * We got the socket we asked for try to connect.
- *                         *
- *                                     * NOTE: connect() has an unspecified time out.  For a good
- *                                                 * a sample of connecting with a timeout see
- *                                                             * http://developerweb.net/viewtopic.php?id=3196 for
- *                                                                         ***************************************************************/
+
             result = connect(socketFd, p->ai_addr, p->ai_addrlen);
 
             if (result != 0)
             {
-                /* this socket wouldn't except our connection */
+                /* this socket wouldn't accept our connection */
                 close(socketFd);
             }
             else
@@ -127,9 +127,7 @@ int result;
         exit(EXIT_FAILURE);
     }
 
-	/*string hostname = argv[1]; 
-	int portVal = atoi(argv[2]);
-	string filename = argv[3];
+	/*
 	  int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	struct sockaddr_in serverAddr;
   serverAddr.sin_family = AF_INET;
@@ -171,14 +169,15 @@ if (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
 	checkErr(connectTest, "Failed to connect socket");
 //
 */
-	char buffer[4] = "fuc";
-	//ifstream myFile("filename");
+    std::ifstream fin(filename, std::ifstream::binary);
+	char buffer[1024] = {0};
 
-
-	checkedWrite(socketFd, buffer,4);
-
-
-
+	while(!fin.eof()) 
+	{
+    	fin.read(buffer.data(), buffer.size())
+    	std::streamsize s=fin.gcount();
+    	checkedWrite(socketFd, buffer,streamsize);
+	}
 	
 
 	close(socketFd);
