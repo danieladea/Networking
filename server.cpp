@@ -61,11 +61,11 @@ int DoEcho(const int clientFd, const fd_list_t *list, string fileDir)
     }
     else
     {
-        const fd_list_t *here;
+        //const fd_list_t *here;
 
         buffer[result] = '\0';
         printf("Socket %d received %s", clientFd, buffer);
-        string fileLocation = fileDir + "/" + to_string(numFiles) + ".txt"
+        string fileLocation = fileDir + "/" + to_string(numFiles) + ".txt";
         ofstream myfile;
         myfile.open(fileLocation);
 
@@ -271,6 +271,7 @@ int main(int argc, char* argv[])
 	int result;
     int listenFd;   /* socket fd used to listen for connection requests */
 
+	string fileDir = argv[2];
     struct fd_list_t *fdList, *thisFd;
     struct pollfd *pfds;
     int numFds, changed;
