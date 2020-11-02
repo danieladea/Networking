@@ -14,7 +14,6 @@ CRC::~CRC()
 void CRC::create_crc_table()
 {
 	uint64_t generator = m_polynomial;
-	crctable = new uint64_t[256];
 	/* iterate over all byte values 0 - 255 */
 	for (int dividend = 0; dividend < 256; dividend++)
 	{
@@ -33,16 +32,17 @@ void CRC::create_crc_table()
 			}
 		}
 		/* store CRC value in lookup table */
-		crctable[dividend] = crc;
+		m_CRC_table[dividend] = crc;
 	}
 }
 
 uint64_t CRC::get_crc_code(uint8_t *stream, int length)
 {
 	uint64_t rem = 0;
-	for (i = 0; i<length; i++)
+	for (int i = 0; i<length; i++)
 	{
-		rem = (rem << 8) ^ m_CRC_table[stream[i] ^ (rem >> 56)]
+		rem = (rem << 8) ^ m_CRC_table[stream[i] ^ (rem >> 56)];
 	}
+	return rem;
 }
 
