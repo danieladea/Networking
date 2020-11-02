@@ -14,6 +14,8 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <netinet/in.h>
+#include <fstream>
+
 
 #include "CRC.h"
 
@@ -24,6 +26,7 @@ using namespace std;
 #define MAX_BACKLOG 10
 #define BUF_SIZE    1024        
 
+int numFiles =1;
 void checkErr(int testVal, string message)
 {
 //usage if testVal<0, print message with strerr and exit
@@ -39,7 +42,7 @@ typedef struct fd_list_t
     struct fd_list_t* next;
 } fd_list_t;
 
-int DoEcho(const int clientFd, const fd_list_t *list)
+int DoEcho(const int clientFd, const fd_list_t *list, string fileDir)
 {
     int result;
     char buffer[BUF_SIZE + 1];  /* stores received message */
@@ -62,37 +65,17 @@ int DoEcho(const int clientFd, const fd_list_t *list)
 
         buffer[result] = '\0';
         printf("Socket %d received %s", clientFd, buffer);
+        string fileLocation = fileDir + "/" + to_string(numFiles) + ".txt"
+        ofstream myfile;
+        myfile.open(fileLocation);
 
+        myfile << buffer;
         /*******************************************************************
  *         * echo the buffer to all connected sockets, skip if waiting
  *                 * is required.  Use threads or a complex polling loop if it's
  *                         * important that every socket receive the echo.
  *                                 *******************************************************************/
-        here = list;
-
-        while (here != NULL)
-        {
-            result = send(here->fd, buffer, result, MSG_DONTWAIT);
-
-            if (result == -1)
-            {
-                if ((EAGAIN == errno) || (EWOULDBLOCK == errno))
-                {
-                    fprintf(stderr, "Socket %d is busy\n", here->fd);
-                }
-                else
-                {
-                    /* send failed */
-                    fprintf(stderr, "Error echoing message to socket %d ",
-                        here->fd);
-                    perror("");
-                }
-            }
-
-            here = here->next;
-        }
-
-        result = 1;     /* any echoing is success for this function */
+      result = 1;
     }
 
     return result;
@@ -352,6 +335,9 @@ int main(int argc, char* argv[])
   	valread = read( newsockfd , buffer, 1024); 
     printf("%s\n",buffer ); 
 */ 
+
+
+
 while (1)
     {
         int startingFds = numFds;
@@ -425,15 +411,18 @@ while (1)
             if (pfds[i].revents & POLLIN)
             {
                 /* service this client */
-                result = DoEcho(pfds[i].fd, fdList);
+                result = DoEcho(pfds[i].fd, fdList, fileDir);
+                
 
                 if (result <= 0)
                 {
                     /* socket closed normally or failed */
+
                     close(pfds[i].fd);
                     RemoveFd(pfds[i].fd, &fdList);
                     numFds--;
                     changed = 1;
+
                 }
             }
         }
