@@ -23,6 +23,13 @@
 #include <iostream>
 #include <sstream>
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <cstdint>
+ 
+
 //#include "CRC.h"
 
 using namespace std;
@@ -56,7 +63,10 @@ void checkedWrite(int sockfd, char *buffer, int size)
 int main(int argc, char* argv[]) 
 {
 
-	int result;
+    string hostname = argv[1]; 
+    int portVal = atoi(argv[2]);
+    string filename = argv[3];
+    int result;
     int socketFd;               /* TCP/IP socket descriptor */
 
     /* structures for use with getaddrinfo() */
@@ -71,10 +81,10 @@ int main(int argc, char* argv[])
         exit(1);
     }
     /*0-1023 are reserved*/
-    if(argc[2]<1024)
+    if(portVal<1024)
     {
     	fprintf(stderr, "Please use a port not within 0-1023" );
-    	exit(1)
+    	exit(1);
     }
 
     memset(&hints, 0, sizeof(hints));
@@ -86,11 +96,8 @@ int main(int argc, char* argv[])
     hints.ai_flags = AI_CANONNAME;      /* include canonical name */
 
     /* get a linked list of likely servers pointed to by servInfo */
-    result = getaddrinfo(hostname, portval, &hints, &servInfo);
+    result = getaddrinfo(argv[1], argv[2], &hints, &servInfo);
 
-	string hostname = argv[1]; 
-	int portVal = atoi(argv[2]);
-	string filename = argv[3];
 
     p=servInfo;
 
@@ -139,44 +146,40 @@ if (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
     perror("connect");
     return 2;
   }
-
   struct sockaddr_in clientAddr;
   socklen_t clientAddrLen = sizeof(clientAddr);
   if (getsockname(sockfd, (struct sockaddr *)&clientAddr, &clientAddrLen) == -1) {
     perror("getsockname");
     return 3;
   }
-
   char ipstr[INET_ADDRSTRLEN] = {'\0'};
   inet_ntop(clientAddr.sin_family, &clientAddr.sin_addr, ipstr, sizeof(ipstr));
   std::cout << "Set up a connection from: " << ipstr << ":" <<
     ntohs(clientAddr.sin_port) << std::endl;
-/*	
+	
 	cout << "yeet";
 //
 	struct sockaddr_in serv_addr;
   	struct hostent *server; 
   	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   	checkErr(sockfd, "Failed to create socket");
-
  	memset((char *) &serv_addr, 0,sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(portVal);
 	cout << "tweet";
 	memcpy( (char *)&serv_addr.sin_addr.s_addr, (char *)server->h_addr,server->h_length);
-
 	int connectTest = connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)); 
 	checkErr(connectTest, "Failed to connect socket");
 //
 */
-    std::ifstream fin(filename, std::ifstream::binary);
+	ifstream fin(filename, std::ifstream::binary);
 	char buffer[1024] = {0};
 
 	while(!fin.eof()) 
 	{
-    	fin.read(buffer.data(), buffer.size())
-    	std::streamsize s=fin.gcount();
-    	checkedWrite(socketFd, buffer,streamsize);
+    	fin.read(buffer, BUFSIZE);
+    	streamsize s=fin.gcount();
+    	checkedWrite(socketFd, buffer,s);
 	}
 	
 
@@ -185,6 +188,5 @@ if (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
 
     return 0;
 }
-
 
 
