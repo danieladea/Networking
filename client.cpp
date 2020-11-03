@@ -30,17 +30,18 @@
 #include <cstdint>
  
 
-//#include "CRC.h"
+#include "CRC.h"
 
 using namespace std;
 
 #define BUFSIZE 1024
 #define CRCSIZE 8
 
-void printExit(char *eString, char *eMessage)
+
+void printExit(string message)
 {
-  fprintf(stderr, "Error: %s. %s \n",eString,  eMessage);
-  exit(1);
+	fprintf(stderr, "%s\n", message.c_str());	
+	exit(1);
 }
 
 void checkErr(int testVal, char* message)
@@ -57,7 +58,7 @@ void checkedWrite(int sockfd, char *buffer, int size)
 	int cWrite;
 	cWrite = write(sockfd, buffer, size);
 	if(cWrite<0)
-    	printExit(strerror(errno), "Failed to write");
+    	printExit("Failed to write");
 }
 
 int main(int argc, char* argv[]) 
@@ -100,7 +101,13 @@ int main(int argc, char* argv[])
 
 
     p=servInfo;
+    struct timeval maxTime;
+	maxTime.tv_sec = 10; 
+	maxTime.tv_usec = 0;
 
+	fd_set fdList;
+	FD_ZERO(&fdList);
+	FD_SET(socketFd, &fdList);
     while (p != NULL)
     {
         /* use current info to create a socket */
@@ -177,8 +184,13 @@ if (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
 
 	while(!fin.eof()) 
 	{
+		int selectCheck = select(socketFd+1, NULL, &fdList, NULL, &maxTime);
+      	checkErr(selectCheck, "Select didn't work");
+      	if( selectCheck == 0)
+			printExit("timeout");
     	fin.read(buffer, BUFSIZE);
     	streamsize s=fin.gcount();
+    	//uint64_t CRC = htobe64(get_crc_code(uint8_t *stream, int length))
     	checkedWrite(socketFd, buffer,s);
 	}
 	
